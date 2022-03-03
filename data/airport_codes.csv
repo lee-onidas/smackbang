@@ -1,5 +1,5 @@
 city_airport,airport_name,continent,iso_country,iso_region,city,gps_code,iata_code,lat,lon,elevation_ft,ident
-City or Airport,,,,,,,,,,,
+Origin,,,,,,,,,,,
 Aalborg - Aalborg Airport,Aalborg Airport,EU,DK,DK-81,Aalborg,EKYT,AAL,57.09275891,9.849243164,10,EKYT
 Albuquerque - Albuquerque International Sunport,Albuquerque International Sunport,NA,US,US-NM,Albuquerque,KABQ,ABQ,35.040199,-106.609001,5355,KABQ
 Abuja - Nnamdi Azikiwe International Airport,Nnamdi Azikiwe International Airport,AF,NG,NG-FC,Abuja,DNAA,ABV,9.006790161,7.263169765,1123,DNAA

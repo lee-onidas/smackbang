@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 from requests.structures import CaseInsensitiveDict
 
-def get_matches(origin_one='NRT', origin_two='SYD', departure_date="01/04/2022", return_date='', currency='USD', continent='AS'):
+def get_matches(origin_one, origin_two, departure_date, continent, return_date, currency):
     '''
     Required arguments: origin_one, origin_two and contintent
     Optional argugments: return_date
@@ -14,7 +14,7 @@ def get_matches(origin_one='NRT', origin_two='SYD', departure_date="01/04/2022",
     url = "https://tequila-api.kiwi.com/v2/search"
 
     # create airports_df from csv
-    airports_df = pd.read_csv('../data/airport_codes.csv')
+    airports_df = pd.read_csv('data/airport_codes.csv')
 
     # creating origins variable to used in get request
     origins = f'{origin_one},{origin_two}'

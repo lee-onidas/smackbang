@@ -1,3 +1,4 @@
+from numpy import NaN, empty
 import streamlit as st
 import datetime
 import base64
@@ -7,6 +8,9 @@ import folium
 import requests
 import os
 from dotenv import load_dotenv, find_dotenv
+import time
+from smackbang.matches import get_matches
+from smackbang.midpoint import midpoint
 
 
 env_path = find_dotenv()
@@ -62,100 +66,54 @@ with row2_1:
 
 with row2_2:
     # Departure and return placeholder dates
-    default_departure_date = datetime.date.today()  + datetime.timedelta(days=28)
-    future_date = default_departure_date + datetime.timedelta(days=10)
+    default_departure_date = datetime.date.today() + datetime.timedelta(days=28)
+    future_date = default_departure_date + datetime.timedelta(days=50)
 
     # Departure and return date input fields
-    departure_date = st.date_input('Meeting Date', default_departure_date)
-    return_date = st.date_input('Return Date', future_date)
+    departure_date = (st.date_input('Meeting Date', default_departure_date, min_value=datetime.date.today())).strftime("%d/%m/%Y")
+    return_date_check = st.checkbox("Do you want to add a return date?")
+
+    if return_date_check:
+        return_date = (st.date_input('Return Date', future_date)).strftime("%d/%m/%Y")
+
+    # Continent
+    continent_input = st.selectbox('Continents', ('Asia', 'Africa', 'Europe', 'North America', 'South America', 'Oceania'))
+
+    def continent_name(continent_input):
+        result = {
+                'Asia' : 'AS',
+                'Africa' : 'AF',
+                'Europe' : 'EU',
+                'North America' : 'NA',
+                'South America' : 'SA',
+                'Oceania' : 'OC',
+                }
+
+        return result.get(continent_input)
+
+    continent = continent_name(continent_input)
 
 # ---------------------------
 #        API Magic Area
 # ---------------------------
 
-    if st.button('Search'):
-        city_url = "https://travelpayouts-travelpayouts-flight-data-v1.p.rapidapi.com/data/en-GB/cities.json"
-        url = "https://travelpayouts-travelpayouts-flight-data-v1.p.rapidapi.com/v1/prices/cheap"
+    if st.button('SmackBang my Destinations'):
+        # Spinner
+        with st.spinner('Hold on while we search 1,000\'s of flights ...'):
+            time.sleep(10)
 
-        def unpack(d):
 
-            df = {'city_code':[], 'price':[], 'airline':[], 'flight_number':[],
-            'departure_at':[], 'return_at':[], 'expires_at':[]}
+        # Matches.py API query and output
+        matches_df = get_matches(origin_one, origin_two, departure_date, continent, return_date='', currency='USD')
+        back_front_df = matches_df.copy()
 
-            for key1, value in d['data'].items():
+        # format price
+        back_front_df['combined_price'] = back_front_df['combined_price'].apply(lambda x: f"${x:,.0f}")
 
-                for key, value2 in value.items():
-                    df['city_code'].append(key1)
-                    for key, value3 in value2.items():
-                        df[key].append(value3)
 
-            return pd.DataFrame(df)
-
-        def query_origin_one(origin_one, page=100, currency="USD", departure_date= "", destination = "-"):
-
-            querystring = {"origin": origin_one, "page":page, "currency":currency , "depart_date": departure_date, "destination": destination}
-
-            headers = {
-                'x-access-token': "ccf49e56bc37cdcbea0545a0a08b7e08",
-                'x-rapidapi-host': "travelpayouts-travelpayouts-flight-data-v1.p.rapidapi.com",
-                'x-rapidapi-key': "062d5d04d0msh9bf753a499a46f8p1d18edjsn469f78c5d3ac"
-                    }
-
-            response = requests.request("GET", url, headers=headers, params=querystring)
-
-            return unpack(response.json())
-
-        def query_origin_two(origin_two, page=100, currency="USD", departure_date= "", destination = "-"):
-
-            querystring = {"origin": origin_two, "page":page, "currency":currency , "depart_date":departure_date, "destination": destination}
-
-            headers = {
-                'x-access-token': "ccf49e56bc37cdcbea0545a0a08b7e08",
-                'x-rapidapi-host': "travelpayouts-travelpayouts-flight-data-v1.p.rapidapi.com",
-                'x-rapidapi-key': "062d5d04d0msh9bf753a499a46f8p1d18edjsn469f78c5d3ac"
-                      }
-
-            response = requests.request("GET", url, headers=headers, params=querystring)
-
-            return unpack(response.json())
-
-        def get_city_location(cities):
-            headers = {
-                'x-access-token': "ccf49e56bc37cdcbea0545a0a08b7e08",
-                'x-rapidapi-host': "travelpayouts-travelpayouts-flight-data-v1.p.rapidapi.com",
-                'x-rapidapi-key': "062d5d04d0msh9bf753a499a46f8p1d18edjsn469f78c5d3ac"
-            }
-
-            response = requests.request("GET", city_url, headers=headers).json()
-
-            city_location = []
-
-            for city in cities:
-                df = pd.DataFrame.from_dict(response)[['code', 'coordinates']].dropna()
-                city_location.append(df.loc[df['code'] == city].coordinates.apply(pd.Series))
-            result = pd.concat(city_location)
-            df = pd.DataFrame(cities)
-
-            result["city_code"] = df.values
-            result.reset_index(inplace = True)
-            result.drop(columns="index", inplace =True)
-            return result
-
-        def merge(query_origin_one,query_origin_two):
-            df= query_origin_one.merge(query_origin_two, on= "city_code")[["city_code","price_x","price_y"]]
-
-            df["sum"] = (df["price_x"] + df["price_y"]).apply(lambda x: f"${x:,.0f}")
-            df['price_x'] = df['price_x'].apply(lambda x: f"${x:,.0f}")
-            df['price_y'] = df['price_y'].apply(lambda x: f"${x:,.0f}")
-
-            lat_lon_df = get_city_location(df['city_code'].values)
-            final = df.merge(lat_lon_df, on="city_code")
-
-            return final
-
-        q1 = query_origin_one(origin_one)
-        q2 = query_origin_two(origin_two)
-        back_front_df = merge(q1,q2)
+        # Playing with price format
+        #back_front_df['price'][:,:] = back_front_df['price'][:,:].apply(lambda x: f"${x:,.0f}")
+        #back_front_df.iloc[1, 'Sydney'] =  back_front_df.iloc[1, 'Sydney'].apply(lambda x: f"${x:,.0f}")
 
 
 # ---------------------------
@@ -165,68 +123,72 @@ with row2_2:
 st.write(''' ''')
 
 st.header('Destinations')
-st.markdown('Destinations inbetween the two origins are displayed below')
+
+if origin_one_input == 'Origin' or origin_two_input == 'Origin':
+    st.markdown(f'Enter your destinations, dates and your continent above.')
+else:
+    city_one = airports.loc[airports['city_airport'] == origin_one_input, 'city' ].to_string(index=False)
+    city_two = airports.loc[airports['city_airport'] == origin_two_input, 'city' ].to_string(index=False)
+    st.markdown(f'Destinations between {city_one} and {city_two} are displayed below')
 
 row3_1, row3_2 = st.columns(2)
 
 # Formatting Output dataframe
 
-back_front_df.rename(columns = {'city_code':'Destination',
-                                'price_x' : 'From Origin 1',
-                                'price_y': 'From Origin 2',
-                                'sum' : 'Combined Price',
-                                }, inplace = True)
+back_front_df.rename(columns = {'price':'Price from',
+                                'duration' : 'Duration from',
+                                'combined_price' : 'Combined Price',
+                                 }, inplace = True)
 
 with row3_1:
     if not back_front_df.empty:
-        st.dataframe(back_front_df[['Destination','From Origin 1','From Origin 2','Combined Price' ]].head(10).set_index('Destination'), 600, 400)
+        st.dataframe(back_front_df[['Price from','Duration from','Combined Price' ]], 800, 600)
     else:
         st.write('')
 
+row3_1 = st.columns(1)
+
 with row3_2:
 
-    df_map = back_front_df.iloc[:10]
+    df_map = back_front_df
 
-    m = folium.Map(location=[0, 110], zoom_start=2, width='100%')
+    if origin_one_input == 'Origin' or origin_two_input == 'Origin' :
+        m = folium.Map(location=[0, 100], zoom_start=2, width='100%')
+    else:
+        origin_one_lat = airports.loc[airports['city_airport'] == origin_one_input, 'lat' ].to_string(index=False)
+        origin_one_lon = airports.loc[airports['city_airport'] == origin_one_input, 'lon' ].to_string(index=False)
+        origin_two_lat = airports.loc[airports['city_airport'] == origin_two_input, 'lat' ].to_string(index=False)
+        origin_two_lon = airports.loc[airports['city_airport'] == origin_two_input, 'lon' ].to_string(index=False)
 
-    for _, dest in df_map.iterrows():
+        starting_location = midpoint(origin_one_lat, origin_one_lon, origin_two_lat, origin_one_lat)
 
+        m = folium.Map(location=starting_location, zoom_start=2, width='100%')
+
+        # City markers
+        for _, dest in df_map.iterrows():
+
+            folium.Marker(
+                location=[dest.lat, dest.lon],
+                popup= [dest.index],
+                icon=folium.Icon(color="blue", icon="info-sign"),
+            ).add_to(m)
+
+        # Origin One marker
         folium.Marker(
-            location=[dest.lat, dest.lon],
-            popup= [dest.Destination, dest['From Origin 1'],dest['From Origin 2'],dest['Combined Price'] ],
-            icon=folium.Icon(color="blue", icon="info-sign"),
+            location=[origin_one_lat, origin_one_lon],
+            popup= [origin_one_input],
+            icon=folium.Icon(color="red", icon="info-sign"),
         ).add_to(m)
 
-    folium_static(m)
+        # Origin Two marker
+        folium.Marker(
+            location=[origin_two_lat, origin_two_lon],
+            popup= [origin_two_input],
+            icon=folium.Icon(color="red", icon="info-sign"),
+        ).add_to(m)
 
-# ---------------------------
-#     Background Image
-# ---------------------------
 
-@st.cache
-def load_image(path):
-    with open(path, 'rb') as f:
-        data = f.read()
-    encoded = base64.b64encode(data).decode()
-    return encoded
+        folium_static(m)
 
-def image_tag(path):
-    encoded = load_image(path)
-    tag = f'<img src="data:image/png;base64,{encoded}">'
-    return tag
 
-def background_image_style(path):
-    encoded = load_image(path)
-    style = f'''
-    <style>
-    .stApp {{
-        background-image: url("data:image/png;base64,{encoded}");
-        background-size: cover;
-    }}
-    </style>
-    '''
-    return style
-
-image_path = 'images/smackbang_world_map.png'
-
-#st.write(background_image_style(image_path), unsafe_allow_html=True)
+#st.write(back_front_df.head())
