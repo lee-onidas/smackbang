@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import re
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-
+from smackbang.matches import get_matches
 
 consumerKey = "PqA88zMUxSwVZi5hJpKdVKT4L"
 consumerSecret = "WQ1xDXrygO4US93heMenGkj5z6DZeUQrZDIyoACAVZqtzulpPc"
@@ -14,11 +14,18 @@ auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
 auth.set_access_token(accessToken, accessTokenSecret)
 api = tweepy.API(auth)
 
-#Sentiment Analysis
+#Sample DataFrame please edit!
+matches_df = get_matches(origin_one='NRT', origin_two='SYD', departure_date='01/04/2022', continent='AS', return_date='', currency='USD')
 
-def analyze_tweet(cities):
+#List of sample cities from matches_df
+city_list = matches_df.index.values
+
+#Sentiment Analysis
+def analyze_tweet(cities): #List of cities
+
     noOfTweet = 2000
     list_df= []
+
     for city in cities:
 
         #tweets = tweepy.Cursor(api.search_tweets(), q=keyword).items(noOfTweet)
@@ -84,4 +91,6 @@ def analyze_tweet(cities):
 
         #Count_values for sentiment
         count_values_in_column(tw_list,"sentiment")
-    return pd.concat(list_df)
+
+    result =  pd.concat(list_df)
+    return result.reset_index(drop=True).drop(columns=["Total","Percentage"]).drop_duplicates()

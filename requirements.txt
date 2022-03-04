@@ -35,3 +35,9 @@ datetime
 streamlit_folium
 folium
 python-dotenv
+
+#twitter.py
+re
+ntlk
+textblob
+tweepy
