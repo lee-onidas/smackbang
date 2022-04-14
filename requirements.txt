@@ -19,6 +19,7 @@ streamlit
 datetime
 pydeck
 requests
+python-dotenv
 
 #twitter.py
 regex
