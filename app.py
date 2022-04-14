@@ -8,6 +8,8 @@ import requests
 from requests.structures import CaseInsensitiveDict
 import multipart
 from smackbang.predict_prepro import process_matches
+from dotenv import load_dotenv, find_dotenv
+import os
 
 env_path = find_dotenv()
 load_dotenv(env_path)
