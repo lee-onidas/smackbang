@@ -9,6 +9,10 @@ from requests.structures import CaseInsensitiveDict
 import multipart
 from smackbang.predict_prepro import process_matches
 
+env_path = find_dotenv()
+load_dotenv(env_path)
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
 airports = pd.read_csv('data/airport_codes.csv')
 matches_df = pd.DataFrame()
 preds_df1 = pd.DataFrame()
@@ -367,15 +371,14 @@ def get_photo(cities):
     for city in cities:
 
         #the response of this is a JSON file that generates a photo reference
-        api_key = "AIzaSyCMMb6QvT3xndUa0Phh5o2S2NWhmAKa5-A"
-        url = f'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input={city}&key={api_key}&inputtype=textquery&fields=name,photos'
+        url = f'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input={city}&key={GOOGLE_API_KEY}&inputtype=textquery&fields=name,photos'
         response = requests.request("GET", url).json()
 
         #the reference that we need to get the photo
         photo_ref = response["candidates"][0]["photos"][0]["photo_reference"]
 
         #make another request for a photo response and return url list
-        photo_url = f'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={api_key}&maxwidth=400&maxheight=400'
+        photo_url = f'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={GOOGLE_API_KEY}&maxwidth=400&maxheight=400'
         response_photo = requests.request("GET",photo_url).url
         urls.append(response_photo)
 
