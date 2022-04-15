@@ -10,7 +10,7 @@ import multipart
 from smackbang.predict_prepro import process_matches
 import os
 
-GOOGLE_API_KEY = "AIzaSyDoI--vUcJTpl0Z9Ys0SUvlTwN0lHllrGQ"
+GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
 
 airports = pd.read_csv('data/airport_codes.csv')
 matches_df = pd.DataFrame()
