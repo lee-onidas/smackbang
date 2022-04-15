@@ -10,8 +10,6 @@ import multipart
 from smackbang.predict_prepro import process_matches
 import os
 
-GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
-
 airports = pd.read_csv('data/airport_codes.csv')
 matches_df = pd.DataFrame()
 preds_df1 = pd.DataFrame()
@@ -363,6 +361,8 @@ with row4_1:
 
 # ----- API for photos
 
+key = os.environ['API_KEY']
+
 def get_photo(cities):
 
     urls = []
@@ -370,7 +370,7 @@ def get_photo(cities):
     for city in cities:
 
         #the response of this is a JSON file that generates a photo reference
-        url = f'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input={city}&key={GOOGLE_API_KEY}&inputtype=textquery&fields=name,photos'
+        url = f'https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input={city}&key={key}&inputtype=textquery&fields=name,photos'
         response = requests.request("GET", url).json()
 
         #the reference that we need to get the photo
