@@ -29,3 +29,6 @@ heroku_create_app:
 deploy_heroku:
 	-@git push heroku master
 	-@heroku ps:scale web=1
+
+destroy_heroku:
+	-@heroku apps:destroy --app smackbang --confirm smackbang
