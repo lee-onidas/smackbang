@@ -26,6 +26,9 @@ heroku_keys:
 heroku_create_app:
 	-@heroku create --ssh-git ${APP_NAME} --region eu
 
+heroku_add_remote:
+	-@git remote add heroku https://git.heroku.com/${APP_NAME}.git
+
 deploy_heroku:
 	-@git push heroku master
 	-@heroku ps:scale web=1
