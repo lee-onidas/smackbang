@@ -377,7 +377,7 @@ def get_photo(cities):
         photo_ref = response["candidates"][0]["photos"][0]["photo_reference"]
 
         #make another request for a photo response and return url list
-        photo_url = f'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={GOOGLE_API_KEY}&maxwidth=400&maxheight=400'
+        photo_url = f'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={key}&maxwidth=400&maxheight=400'
         response_photo = requests.request("GET",photo_url).url
         urls.append(response_photo)
 
